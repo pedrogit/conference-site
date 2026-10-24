@@ -122,7 +122,7 @@ export default function App() {
         </nav>
 
         <div className="hero-content">
-          <p className="eyebrow">October 24–25 • Berlin</p>
+          <p className="eyebrow">October 24–25 • Quebec City</p>
           <h1>Build the future of product engineering.</h1>
           <p className="subtext">
             Join engineers, designers, founders, and product leaders for two days of
