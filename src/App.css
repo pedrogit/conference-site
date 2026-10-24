@@ -236,6 +236,28 @@ select {
   box-shadow: 0 10px 25px rgba(124, 58, 237, 0.35);
 }
 
+.proposal-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.proposal-option {
+  background: #0b1220;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.proposal-option.active {
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  border-color: transparent;
+}
+
 .status-banner {
   margin-bottom: 18px;
   background: rgba(34, 197, 94, 0.12);
@@ -306,5 +328,9 @@ select {
   .session-row {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .proposal-toggle {
+    grid-template-columns: 1fr;
   }
 }

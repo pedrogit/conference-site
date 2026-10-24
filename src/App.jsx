@@ -93,7 +93,11 @@ export default function App() {
         ...proposal,
         created_at: new Date().toISOString(),
       });
-      setStatus("Proposal submitted successfully.");
+      setStatus(
+        proposal.type === "talk"
+          ? "Talk proposal submitted successfully."
+          : "Workshop proposal submitted successfully."
+      );
       setProposal({
         name: "",
         email: "",
@@ -272,7 +276,24 @@ export default function App() {
             </form>
           ) : (
             <form id="submit" className="form-card" onSubmit={handleProposalSubmit}>
-              <h3>Submit a talk or workshop</h3>
+              <h3>Submit a proposal</h3>
+
+              <div className="proposal-toggle" aria-label="Proposal type selector">
+                <button
+                  type="button"
+                  className={proposal.type === "talk" ? "proposal-option active" : "proposal-option"}
+                  onClick={() => setProposal({ ...proposal, type: "talk" })}
+                >
+                  Talk proposal
+                </button>
+                <button
+                  type="button"
+                  className={proposal.type === "workshop" ? "proposal-option active" : "proposal-option"}
+                  onClick={() => setProposal({ ...proposal, type: "workshop" })}
+                >
+                  Workshop proposal
+                </button>
+              </div>
 
               <label>
                 Your name
@@ -295,24 +316,13 @@ export default function App() {
               </label>
 
               <label>
-                Session title
+                {proposal.type === "talk" ? "Talk title" : "Workshop title"}
                 <input
                   type="text"
                   value={proposal.title}
                   onChange={(e) => setProposal({ ...proposal, title: e.target.value })}
                   required
                 />
-              </label>
-
-              <label>
-                Session type
-                <select
-                  value={proposal.type}
-                  onChange={(e) => setProposal({ ...proposal, type: e.target.value })}
-                >
-                  <option value="talk">Talk</option>
-                  <option value="workshop">Workshop</option>
-                </select>
               </label>
 
               <label>
@@ -340,7 +350,7 @@ export default function App() {
               </label>
 
               <button className="primary-btn full-width" type="submit">
-                Submit proposal
+                {proposal.type === "talk" ? "Submit talk proposal" : "Submit workshop proposal"}
               </button>
             </form>
           )}
