@@ -1,336 +1,624 @@
-:root {
-  --bg: #08111f;
-  --bg-soft: #0f172a;
-  --panel: #101b2e;
-  --panel-alt: #131f35;
-  --card: rgba(17, 24, 39, 0.85);
-  --text: #eff6ff;
-  --muted: #bfd4f6;
-  --primary: #7c3aed;
-  --primary-strong: #5b21b6;
-  --accent: #22c55e;
-  --border: rgba(148, 163, 184, 0.18);
-  --shadow: 0 20px 50px rgba(3, 7, 18, 0.38);
-}
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "./lib/supabase";
+import "./App.css";
 
-* {
-  box-sizing: border-box;
-}
+const talks = [
+  { title: "Concevoir des systèmes qui évoluent", speaker: "Alicia Moore", time: "09:30" },
+  { title: "Du prototype au produit", speaker: "Priya Shah", time: "11:00" },
+  { title: "Accélérez votre production avec l'automatisation", speaker: "Luca Kim", time: "14:00" },
+];
 
-html {
-  scroll-behavior: smooth;
-}
+const workshops = [
+  { title: "Optimisation des performances React", speaker: "Nina Hart", duration: "90 min" },
+  { title: "L'IA pour les équipes produit", speaker: "Sam Lee", duration: "60 min" },
+  { title: "Design systems à grande échelle", speaker: "Mira Chen", duration: "120 min" },
+];
 
-body {
-  margin: 0;
-  font-family: "Inter", sans-serif;
-  background:
-    radial-gradient(circle at top, rgba(124, 58, 237, 0.25), transparent 30%),
-    var(--bg);
-  color: var(--text);
-}
+const ADMIN_SECRET = "devsummit-admin";
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+const getStoredEntries = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
+const saveToStorage = (key, value) => {
+  localStorage.setItem(key, JSON.stringify(value));
+};
 
-.app-shell {
-  min-height: 100vh;
-}
+const buildId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-.hero {
-  padding: 28px 6vw 88px;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(37, 99, 235, 0.86));
-  border-bottom: 1px solid var(--border);
-}
-
-.nav {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-}
-
-.brand {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-}
-
-.nav-links {
-  display: flex;
-  gap: 24px;
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.hero-content {
-  max-width: 1200px;
-  margin: 92px auto 0;
-}
-
-.eyebrow,
-.label {
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #c7d2fe;
-}
-
-.hero h1 {
-  margin: 18px 0 16px;
-  max-width: 720px;
-  font-size: clamp(2.8rem, 5vw, 5rem);
-  line-height: 0.98;
-  letter-spacing: -0.06em;
-}
-
-.subtext {
-  max-width: 700px;
-  color: var(--muted);
-  font-size: 1.1rem;
-  line-height: 1.7;
-}
-
-.cta-row {
-  margin-top: 32px;
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-}
-
-.primary-btn,
-.ghost-btn,
-.tab {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  transition: 0.2s ease;
-  font-weight: 700;
-}
-
-.primary-btn {
-  background: white;
-  color: var(--bg);
-  padding: 14px 22px;
-}
-
-.primary-btn:hover {
-  transform: translateY(-1px);
-}
-
-.ghost-btn {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: white;
-  padding: 14px 22px;
-}
-
-.section {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 84px 6vw;
-}
-
-.alt-section {
-  background: rgba(15, 23, 42, 0.55);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-
-.section-heading h2 {
-  margin: 12px 0 0;
-  font-size: clamp(2rem, 4vw, 3rem);
-  letter-spacing: -0.05em;
-}
-
-.cards {
-  margin-top: 32px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-}
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 24px;
-  box-shadow: var(--shadow);
-}
-
-.card h3 {
-  margin-top: 0;
-  margin-bottom: 12px;
-  font-size: 1.3rem;
-}
-
-.card p,
-.card small {
-  color: var(--muted);
-  line-height: 1.7;
-}
-
-.session-list {
-  margin-top: 28px;
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-.session-row {
-  display: grid;
-  grid-template-columns: 120px 1fr 200px;
-  gap: 16px;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--border);
-}
-
-.session-row:last-child {
-  border-bottom: none;
-}
-
-.session-row span {
-  color: var(--muted);
-}
-
-.form-section {
-  padding-top: 60px;
-  padding-bottom: 100px;
-}
-
-.tabs {
-  display: inline-flex;
-  gap: 10px;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px;
-  margin-bottom: 18px;
-}
-
-.tab {
-  background: transparent;
-  color: var(--text);
-  padding: 12px 18px;
-  border-radius: 10px;
-}
-
-.tab.active {
-  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
-  box-shadow: 0 10px 25px rgba(124, 58, 237, 0.35);
-}
-
-.proposal-toggle {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.proposal-option {
-  background: #0b1220;
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 12px;
-  padding: 12px 14px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.proposal-option.active {
-  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
-  border-color: transparent;
-}
-
-.status-banner {
-  margin-bottom: 18px;
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.4);
-  color: #d1fae5;
-  border-radius: 12px;
-  padding: 12px 16px;
-}
-
-.form-card {
-  max-width: 720px;
-  display: grid;
-  gap: 18px;
-  background: rgba(15, 23, 42, 0.82);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 28px;
-  box-shadow: var(--shadow);
-}
-
-.form-card h3 {
-  margin: 0 0 8px;
-  font-size: 1.8rem;
-}
-
-.form-card label {
-  display: grid;
-  gap: 8px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.form-card input,
-.form-card select,
-.form-card textarea {
-  width: 100%;
-  background: #0b1220;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--text);
-  padding: 14px 16px;
-  resize: vertical;
-}
-
-.form-card textarea {
-  min-height: 140px;
-}
-
-.full-width {
-  width: 100%;
-}
-
-@media (max-width: 640px) {
-  .nav {
-    flex-direction: column;
-    align-items: flex-start;
+const saveRegistration = async (payload) => {
+  if (supabase) {
+    const { error } = await supabase.from("registrations").insert([payload]);
+    if (error) throw error;
+    return { mode: "supabase" };
   }
 
-  .nav-links {
-    flex-wrap: wrap;
-    gap: 14px;
+  const entries = getStoredEntries("conference-registrations");
+  const updated = [...entries, { ...payload, createdAt: new Date().toISOString() }];
+  saveToStorage("conference-registrations", updated);
+  return { mode: "local" };
+};
+
+const saveProposal = async (payload) => {
+  if (supabase) {
+    const { error } = await supabase.from("proposals").insert([payload]);
+    if (error) throw error;
+    return { mode: "supabase" };
   }
 
-  .hero {
-    padding-bottom: 60px;
+  const entries = getStoredEntries("conference-proposals");
+  const updated = [...entries, { ...payload, createdAt: new Date().toISOString() }];
+  saveToStorage("conference-proposals", updated);
+  return { mode: "local" };
+};
+
+const getStoredProposals = () =>
+  getStoredEntries("conference-proposals").map((proposal) => ({
+    id: proposal.id || buildId(),
+    name: proposal.name || "",
+    email: proposal.email || "",
+    title: proposal.title || "",
+    type: proposal.type || "talk",
+    summary: proposal.summary || "",
+    experience: proposal.experience || "Intermediate",
+    status: proposal.status || "pending",
+    created_at: proposal.created_at || proposal.createdAt || new Date().toISOString(),
+  }));
+
+const getStoredRegistrations = () =>
+  getStoredEntries("conference-registrations").map((registration, index) => ({
+    id: registration.id || `${index}-${buildId()}`,
+    name: registration.name || "",
+    email: registration.email || "",
+    company: registration.company || "",
+    ticket: registration.ticket || "standard",
+    created_at: registration.created_at || registration.createdAt || new Date().toISOString(),
+  }));
+
+const getSupabaseProposals = async () => {
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.from("proposals").select("*").order("created_at", {
+    ascending: false,
+  });
+
+  if (error) {
+    console.error("Supabase proposals error:", error);
+    return [];
   }
 
-  .session-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  return (data || []).map((item) => ({
+    ...item,
+    status: item.status || "pending",
+  }));
+};
+
+const getSupabaseRegistrations = async () => {
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.from("registrations").select("*").order("created_at", {
+    ascending: false,
+  });
+
+  if (error) {
+    console.error("Supabase registrations error:", error);
+    return [];
   }
 
-  .proposal-toggle {
-    grid-template-columns: 1fr;
+  return data || [];
+};
+
+const updateProposalStatus = async (id, nextStatus) => {
+  if (supabase) {
+    const { error } = await supabase.from("proposals").update({ status: nextStatus }).eq("id", id);
+    if (error) throw error;
+    return;
   }
+
+  const proposals = getStoredProposals();
+  const updated = proposals.map((proposal) =>
+    proposal.id === id ? { ...proposal, status: nextStatus } : proposal
+  );
+  saveToStorage("conference-proposals", updated);
+};
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState("register");
+  const [status, setStatus] = useState("");
+  const [view, setView] = useState("public");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+  const [registrations, setRegistrations] = useState([]);
+  const [proposals, setProposals] = useState([]);
+  const [registration, setRegistration] = useState({
+    name: "",
+    email: "",
+    company: "",
+    ticket: "standard",
+  });
+  const [proposal, setProposal] = useState({
+    name: "",
+    email: "",
+    title: "",
+    type: "talk",
+    summary: "",
+    experience: "Intermediate",
+  });
+
+  useEffect(() => {
+    const localReg = getStoredRegistrations();
+    const localProps = getStoredProposals();
+    setRegistrations(localReg);
+    setProposals(localProps);
+
+    const loadFromSupabase = async () => {
+      if (!supabase) return;
+      const [supabaseProposals, supabaseRegistrations] = await Promise.all([
+        getSupabaseProposals(),
+        getSupabaseRegistrations(),
+      ]);
+
+      setProposals([...supabaseProposals, ...localProps]);
+      setRegistrations([...supabaseRegistrations, ...localReg]);
+    };
+
+    loadFromSupabase();
+  }, []);
+
+  const proposalCounts = useMemo(() => {
+    const counts = { total: proposals.length, pending: 0, accepted: 0, rejected: 0 };
+
+    proposals.forEach((item) => {
+      const normalized = (item.status || "pending").toLowerCase();
+      counts.total += 0;
+      if (normalized === "pending") counts.pending += 1;
+      if (normalized === "accepted") counts.accepted += 1;
+      if (normalized === "rejected") counts.rejected += 1;
+    });
+
+    return counts;
+  }, [proposals]);
+
+  const handleRegistrationSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        id: buildId(),
+        ...registration,
+        created_at: new Date().toISOString(),
+      };
+
+      await saveRegistration(payload);
+      setRegistrations((prev) => [payload, ...prev]);
+      setStatus("Inscription enregistrée avec succès.");
+      setRegistration({ name: "", email: "", company: "", ticket: "standard" });
+    } catch (error) {
+      setStatus("Une erreur s'est produite lors de l'inscription. Veuillez réessayer.");
+      console.error(error);
+    }
+  };
+
+  const handleProposalSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        id: buildId(),
+        ...proposal,
+        status: "pending",
+        created_at: new Date().toISOString(),
+      };
+
+      await saveProposal(payload);
+      setProposals((prev) => [payload, ...prev]);
+      setStatus(
+        proposal.type === "talk"
+          ? "Proposition de conférence soumise avec succès."
+          : "Proposition d'atelier soumise avec succès."
+      );
+      setProposal({
+        name: "",
+        email: "",
+        title: "",
+        type: "talk",
+        summary: "",
+        experience: "Intermediate",
+      });
+    } catch (error) {
+      setStatus("Une erreur s'est produite lors de la soumission. Veuillez réessayer.");
+      console.error(error);
+    }
+  };
+
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    if (adminPassword === ADMIN_SECRET) {
+      setAdminAuthenticated(true);
+      setView("admin");
+    } else {
+      setStatus("Mot de passe administrateur incorrect.");
+    }
+  };
+
+  const handleStatusChange = async (proposalId, nextStatus) => {
+    try {
+      await updateProposalStatus(proposalId, nextStatus);
+      setProposals((prev) =>
+        prev.map((item) => (item.id === proposalId ? { ...item, status: nextStatus } : item))
+      );
+      setStatus("Statut mis à jour.");
+    } catch (error) {
+      setStatus("La mise à jour du statut a échoué.");
+      console.error(error);
+    }
+  };
+
+  return (
+    <div className="app-shell">
+      <header className="hero">
+        <nav className="nav">
+          <div className="brand">DevSummit 2026</div>
+          <div className="nav-links">
+            <a href="#about">À propos</a>
+            <a href="#schedule">Horaire</a>
+            <a href="#workshops">Ateliers</a>
+            <a href="#register">S'inscrire</a>
+            <button className="nav-admin" type="button" onClick={() => setView(view === "admin" ? "public" : "admin")}>
+              {view === "admin" ? "Site public" : "Admin"}
+            </button>
+          </div>
+        </nav>
+
+        <div className="hero-content">
+          <p className="eyebrow">24-25 octobre • Québec</p>
+          <h1>Construisez l'avenir de l'ingénierie produit.</h1>
+          <p className="subtext">
+            Rejoignez des ingénieurs, des designers, des fondateurs et des leaders produits
+            pour deux jours de conférences, d'ateliers pratiques et de réseautage.
+          </p>
+
+          <div className="cta-row">
+            <a href="#register" className="primary-btn">S'inscrire maintenant</a>
+            <a href="#submit" className="ghost-btn">Soumettre une conférence</a>
+          </div>
+        </div>
+      </header>
+
+      {view === "admin" ? (
+        <main className="admin-shell">
+          {!adminAuthenticated ? (
+            <section className="admin-login card-panel">
+              <h2>Administration</h2>
+              <p>Connectez-vous pour gérer les inscriptions et les propositions.</p>
+              <form onSubmit={handleAdminLogin} className="admin-form">
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Mot de passe"
+                />
+                <button type="submit" className="primary-btn">Se connecter</button>
+              </form>
+            </section>
+          ) : (
+            <section className="admin-dashboard card-panel">
+              <div className="dashboard-header">
+                <h2>Tableau de bord</h2>
+                <button className="ghost-btn" type="button" onClick={() => setAdminAuthenticated(false)}>
+                  Déconnexion
+                </button>
+              </div>
+
+              <div className="metrics-grid">
+                <div className="metric-box">
+                  <span>Inscriptions</span>
+                  <strong>{registrations.length}</strong>
+                </div>
+                <div className="metric-box">
+                  <span>Propositions</span>
+                  <strong>{proposalCounts.total}</strong>
+                </div>
+                <div className="metric-box">
+                  <span>En attente</span>
+                  <strong>{proposalCounts.pending}</strong>
+                </div>
+                <div className="metric-box">
+                  <span>Acceptées</span>
+                  <strong>{proposalCounts.accepted}</strong>
+                </div>
+                <div className="metric-box">
+                  <span>Rejetées</span>
+                  <strong>{proposalCounts.rejected}</strong>
+                </div>
+              </div>
+
+              <div className="admin-section">
+                <h3>Propositions reçues</h3>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Type</th>
+                        <th>Nom</th>
+                        <th>Titre</th>
+                        <th>Résumé</th>
+                        <th>Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {proposals.map((item) => (
+                        <tr key={item.id}>
+                          <td>{item.type === "talk" ? "Conférence" : "Atelier"}</td>
+                          <td>{item.name}</td>
+                          <td>{item.title}</td>
+                          <td>{item.summary}</td>
+                          <td>
+                            <select
+                              value={item.status || "pending"}
+                              onChange={(e) => handleStatusChange(item.id, e.target.value)}
+                            >
+                              <option value="pending">En attente</option>
+                              <option value="accepted">Acceptée</option>
+                              <option value="rejected">Rejetée</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="admin-section">
+                <h3>Inscriptions</h3>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Nom</th>
+                        <th>Courriel</th>
+                        <th>Entreprise</th>
+                        <th>Billet</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {registrations.map((entry) => (
+                        <tr key={entry.id}>
+                          <td>{entry.name}</td>
+                          <td>{entry.email}</td>
+                          <td>{entry.company || "—"}</td>
+                          <td>{entry.ticket}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          )}
+        </main>
+      ) : (
+        <main>
+          <section id="about" className="section">
+            <div className="section-heading">
+              <p className="label">Pourquoi participer</p>
+              <h2>Tout ce qu'il faut pour concevoir de meilleurs produits.</h2>
+            </div>
+
+            <div className="cards">
+              <div className="card">
+                <h3>12+ conférenciers</h3>
+                <p>Apprenez de ceux qui construisent les outils et les équipes derrière les produits modernes.</p>
+              </div>
+              <div className="card">
+                <h3>6 ateliers pratiques</h3>
+                <p>Obtenez des conseils concrets que vous pourrez appliquer immédiatement à votre équipe ou à votre produit.</p>
+              </div>
+              <div className="card">
+                <h3>500 participants</h3>
+                <p>Rencontrez des fondateurs, des ingénieurs et des leaders du design de l'industrie.</p>
+              </div>
+            </div>
+          </section>
+
+          <section id="schedule" className="section alt-section">
+            <div className="section-heading">
+              <p className="label">Conférences à venir</p>
+              <h2>Apprenez de leaders qui livrent des résultats concrets.</h2>
+            </div>
+
+            <div className="session-list">
+              {talks.map((talk) => (
+                <div className="session-row" key={talk.title}>
+                  <span>{talk.time}</span>
+                  <strong>{talk.title}</strong>
+                  <span>{talk.speaker}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section id="workshops" className="section">
+            <div className="section-heading">
+              <p className="label">Ateliers</p>
+              <h2>Des sessions profondes pour progresser concrètement.</h2>
+            </div>
+
+            <div className="cards">
+              {workshops.map((workshop) => (
+                <div className="card" key={workshop.title}>
+                  <h3>{workshop.title}</h3>
+                  <p>{workshop.speaker}</p>
+                  <small>{workshop.duration}</small>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="section form-section">
+            <div className="tabs">
+              <button
+                className={activeTab === "register" ? "tab active" : "tab"}
+                onClick={() => setActiveTab("register")}
+                type="button"
+              >
+                S'inscrire
+              </button>
+              <button
+                className={activeTab === "submit" ? "tab active" : "tab"}
+                onClick={() => setActiveTab("submit")}
+                type="button"
+              >
+                Soumettre une proposition
+              </button>
+            </div>
+
+            {status && <div className="status-banner">{status}</div>}
+
+            {activeTab === "register" ? (
+              <form id="register" className="form-card" onSubmit={handleRegistrationSubmit}>
+                <h3>Inscrivez-vous au DevSummit</h3>
+
+                <label>
+                  Nom complet
+                  <input
+                    type="text"
+                    value={registration.name}
+                    onChange={(e) =>
+                      setRegistration({ ...registration, name: e.target.value })
+                    }
+                    required
+                  />
+                </label>
+
+                <label>
+                  Courriel
+                  <input
+                    type="email"
+                    value={registration.email}
+                    onChange={(e) =>
+                      setRegistration({ ...registration, email: e.target.value })
+                    }
+                    required
+                  />
+                </label>
+
+                <label>
+                  Entreprise
+                  <input
+                    type="text"
+                    value={registration.company}
+                    onChange={(e) =>
+                      setRegistration({ ...registration, company: e.target.value })
+                    }
+                  />
+                </label>
+
+                <label>
+                  Type de billet
+                  <select
+                    value={registration.ticket}
+                    onChange={(e) =>
+                      setRegistration({ ...registration, ticket: e.target.value })
+                    }
+                  >
+                    <option value="standard">Standard</option>
+                    <option value="vip">VIP</option>
+                    <option value="student">Étudiant</option>
+                  </select>
+                </label>
+
+                <button className="primary-btn full-width" type="submit">
+                  Confirmer l'inscription
+                </button>
+              </form>
+            ) : (
+              <form id="submit" className="form-card" onSubmit={handleProposalSubmit}>
+                <h3>Soumettre une proposition</h3>
+
+                <div className="proposal-toggle" aria-label="Sélecteur de type de proposition">
+                  <button
+                    type="button"
+                    className={proposal.type === "talk" ? "proposal-option active" : "proposal-option"}
+                    onClick={() => setProposal({ ...proposal, type: "talk" })}
+                  >
+                    Proposition de conférence
+                  </button>
+                  <button
+                    type="button"
+                    className={proposal.type === "workshop" ? "proposal-option active" : "proposal-option"}
+                    onClick={() => setProposal({ ...proposal, type: "workshop" })}
+                  >
+                    Proposition d'atelier
+                  </button>
+                </div>
+
+                <label>
+                  Votre nom
+                  <input
+                    type="text"
+                    value={proposal.name}
+                    onChange={(e) => setProposal({ ...proposal, name: e.target.value })}
+                    required
+                  />
+                </label>
+
+                <label>
+                  Courriel
+                  <input
+                    type="email"
+                    value={proposal.email}
+                    onChange={(e) => setProposal({ ...proposal, email: e.target.value })}
+                    required
+                  />
+                </label>
+
+                <label>
+                  {proposal.type === "talk" ? "Titre de la conférence" : "Titre de l'atelier"}
+                  <input
+                    type="text"
+                    value={proposal.title}
+                    onChange={(e) => setProposal({ ...proposal, title: e.target.value })}
+                    required
+                  />
+                </label>
+
+                <label>
+                  Résumé
+                  <textarea
+                    rows="5"
+                    value={proposal.summary}
+                    onChange={(e) => setProposal({ ...proposal, summary: e.target.value })}
+                    required
+                  />
+                </label>
+
+                <label>
+                  Niveau d'expérience
+                  <select
+                    value={proposal.experience}
+                    onChange={(e) =>
+                      setProposal({ ...proposal, experience: e.target.value })
+                    }
+                  >
+                    <option value="Beginner">Débutant</option>
+                    <option value="Intermediate">Intermédiaire</option>
+                    <option value="Advanced">Avancé</option>
+                  </select>
+                </label>
+
+                <button className="primary-btn full-width" type="submit">
+                  {proposal.type === "talk" ? "Soumettre la proposition de conférence" : "Soumettre la proposition d'atelier"}
+                </button>
+              </form>
+            )}
+          </section>
+        </main>
+      )}
+    </div>
+  );
 }

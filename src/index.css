@@ -1,9 +1,79 @@
-html, body, #root {
-  margin: 0;
-  min-height: 100%;
-  width: 100%;
-}
+# DevSummit Conference Site
 
-body {
-  min-height: 100vh;
-}
+Un site React + Vite pour une conférence avec :
+- page d'accueil
+- inscription des participants
+- proposition de conférences et d'ateliers
+- tableau d'administration pour examiner les soumissions
+- stockage local par défaut
+- support Supabase si les variables d'environnement sont configurées
+
+## Lancer localement
+
+```bash
+npm install
+npm run dev
+```
+
+Puis ouvrez : http://localhost:5173
+
+## Accès admin (version démonstration)
+
+La vue d'administration est protégée par un mot de passe simple pour démonstration :
+
+```text
+devsummit-admin
+```
+
+Cela est uniquement à des fins de démonstration. En production, remplacez cela par une vraie authentification.
+
+## Variables d'environnement pour Supabase
+
+Créez un fichier `.env` :
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+Puis créez les tables :
+
+```sql
+create table registrations (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  email text not null,
+  company text,
+  ticket text not null,
+  created_at timestamp with time zone default now()
+);
+
+create table proposals (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  email text not null,
+  title text not null,
+  type text not null default 'talk',
+  summary text not null,
+  experience text not null default 'Intermediate',
+  status text not null default 'pending',
+  created_at timestamp with time zone default now()
+);
+```
+
+## Déploiement Vercel
+
+1. Pousser le dépôt vers GitHub
+2. Importer le dépôt dans Vercel
+3. Sélectionner le framework Vite
+4. Build command : `npm run build`
+5. Output directory : `dist`
+6. Ajouter les variables d'environnement Supabase si utilisées
+7. Déployer
+
+## Notes
+
+- Sans Supabase configuré, les données sont stockées dans `localStorage`.
+- L'admin side est fonctionnel en mode démonstration.
+- Le design et le contenu peuvent être personnalisés selon votre conférence.
+
